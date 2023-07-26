@@ -37,6 +37,17 @@ fun main(args: Array<String>) {
     )
     val sln3Result = puzzle3Checker.checkSolution(listOf("outlandish", "harp"))
     sln3Result.print()
+
+    val puzzle4Checker = buildAndSolve(
+        listOf(
+            setOf('d', 'k', 'm'),
+            setOf('n', 'p', 't'),
+            setOf('r', 'b', 's'),
+            setOf('i', 'a', 'o'),
+        ), dictionary
+    )
+    val sln4Result = puzzle4Checker.checkSolution(listOf("barnstorms", "skidpan"))
+    sln4Result.print()
 }
 
 fun buildAndSolve(sides: List<Set<Char>>, dictionary: Dictionary): LetterBoxedSolutionChecker {

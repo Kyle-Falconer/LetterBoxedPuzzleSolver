@@ -1,7 +1,6 @@
 import okio.*
 import okio.Path.Companion.toPath
 import java.io.InputStream
-import java.net.URL
 import kotlin.io.use
 
 class Dictionary {
@@ -9,16 +8,18 @@ class Dictionary {
     val words: List<String>
 
     init {
-        words = readSanitizedDictionary()
+//        val rawWords = sanitized()
+//        writeDictionary("sanitized_words_list.txt", rawWords)
+        words = readDictionary("sanitized_words_list.txt")
     }
 
     fun validWord(word: String): Boolean {
         return words.contains(word)
     }
 
-    private fun readSanitizedDictionary(): List<String> {
-        val dictionaryResource: InputStream? = this.javaClass.classLoader.getResourceAsStream("sanitized_words_list.txt")
-//        val resourcePath = dictionaryResource?.path?.toPath()
+    private fun readDictionary(resourceFileName: String): List<String> {
+        val dictionaryResource = this.javaClass.classLoader
+            .getResourceAsStream(resourceFileName)
         return readDictionary(dictionaryResource)
     }
 
@@ -31,57 +32,22 @@ class Dictionary {
 
         inputStream.bufferedReader().use {
             val dictionaryText = it.readText()
-            dictionaryText.lines().forEach{line ->
+            dictionaryText.lines().forEach { line ->
                 val word = line.trim()
                 word.isNotEmpty().let {
                     result.add(word)
                 }
             }
         }
-//        FileSystem.SYSTEM.source(path).use { fileSource ->
-//            fileSource.buffer().use { bufferedFileSource ->
-//                while (true) {
-//                    val line = bufferedFileSource.readUtf8Line() ?: break
-//                    result.add(line.trim())
-//                }
-//            }
-//        }
         return result.toList()
     }
-
-
-    private fun readRawDictionary(): List<String> {
-        val dictionaryResource = this.javaClass.classLoader
-            .getResource("raw_words_list.txt")
-        val resourcePath = dictionaryResource?.path?.toPath()
-        return readDictionary(resourcePath)
-    }
-
-    private fun readDictionary(path: Path?): List<String> {
-        if (path == null) {
-            println("cannot load dictionary")
-            return listOf()
-        }
-        val result = mutableListOf<String>()
-        FileSystem.SYSTEM.source(path).use { fileSource ->
-            fileSource.buffer().use { bufferedFileSource ->
-                while (true) {
-                    val line = bufferedFileSource.readUtf8Line() ?: break
-                    result.add(line.trim())
-                }
-            }
-        }
-        return result.toList()
-    }
-
 
     @Throws(IOException::class)
-    fun writeSanitized() {
-        val resourcePath = "sanitized_words_list.txt".toPath()
+    fun writeDictionary(outputFileName:String, words:List<String>) {
+        val resourcePath = outputFileName.toPath()
 
-        val sanitizedList = sanitized()
         FileSystem.SYSTEM.write(resourcePath) {
-            sanitizedList.forEach {
+            words.forEach {
                 writeUtf8(it)
                 writeUtf8("\n")
             }
@@ -90,14 +56,15 @@ class Dictionary {
 
     private fun sanitized(): List<String> {
         val sanitized = mutableSetOf<String>()
-        readRawDictionary().forEach { word -> sanitized.add(word) }
+        readDictionary("raw_words_list.txt").forEach { word -> sanitized.add(word) }
         return sanitized
             .asSequence()
             .filter {
+                // keep only alphabetic words
                 !it.contains("""[0-9.&'/\-]""".toRegex())
             }
             .filter {
-                //anything less than 2 characters long
+                // keep only words 3+ characters long
                 it.length >= 2
             }
             .filter {
